@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Concessions Menu</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #222;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 0.5em;
+    }
+    table {
+      width: 100%;
+      max-width: 600px;
+      margin: auto;
+      border-collapse: collapse;
+      font-size: 1.5em;
+    }
+    th, td {
+      padding: 12px;
+    }
+    tr.soldout {
+      color: #888;
+      text-decoration: line-through;
+    }
+  </style>
+</head>
+<body>
+  <h1>🏈 Concessions Menu</h1>
+  <table id="menu">
+    <thead>
+      <tr><th>Item</th><th>Price</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const SHEET_ID = "2PACX-1vQMiDkGhwo3kxlhSgZAg11oIo9DHa3MIqVsShsZHzbV8lg0euVGHUeQl_zTqUD_ZScXtuVd56VZxMXr"; // <-- Replace with your Sheet ID
+    const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+
+    async function loadMenu() {
+      try {
+        const res = await fetch(SHEET_URL);
+        const text = await res.text();
+        const json = JSON.parse(text.substring(47).slice(0, -2));
+        const data = json.table.rows.map(row => {
+          return {
+            item: row.c[0]?.v || "",
+            price: row.c[1]?.v || "",
+            available: (row.c[2]?.v || "").toLowerCase() === "yes"
+          };
+        });
+
+        const tbody = document.querySelector("#menu tbody");
+        tbody.innerHTML = "";
+
+        data.forEach(entry => {
+          const tr = document.createElement("tr");
+          if (!entry.available) tr.classList.add("soldout");
+          tr.innerHTML = `<td>${entry.item}</td><td>${entry.price}</td>`;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error("Error loading menu:", err);
+      }
+    }
+
+    loadMenu();
+    setInterval(loadMenu, 10000); // Refresh every 10 seconds
+  </script>
+</body>
+</html>
