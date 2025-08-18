@@ -15,8 +15,14 @@
     h1 {
       font-size: 3em;
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 10px;
       color: #ffcc00;
+    }
+    .price-labels {
+      text-align: right;
+      font-size: 1em;
+      color: #aaa;
+      margin-bottom: 20px;
     }
     .category {
       font-size: 2em;
@@ -36,10 +42,29 @@
     td {
       padding: 10px 5px;
       border-bottom: 1px solid #444;
+      vertical-align: top;
     }
     td.price {
       text-align: right;
-      width: 150px;
+      width: 200px;
+      white-space: nowrap;
+    }
+    .item-name {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .toggle-icon {
+      font-size: 0.7em;
+      color: #ffcc00;
+      margin-left: 10px;
+    }
+    .notes {
+      font-size: 0.6em;
+      color: #bbb;
+      margin-top: 5px;
+      display: none;
     }
     tr.soldout td.item {
       color: #888;
@@ -52,10 +77,11 @@
 </head>
 <body>
   <h1>Concessions Menu</h1>
+  <div class="price-labels">One / Two</div>
   <div id="menu"></div>
 
   <script>
-    const SHEET_ID = "1SCplGSlgFs4jHvPhj2mVwToWkQknWmeevnxE1wss970"; // Replace with your Sheet ID
+    const SHEET_ID = "1SCplGSlgFs4jHvPhj2mVwToWkQknWmeevnxE1wss970";
     const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 
     async function fetchData() {
@@ -71,17 +97,15 @@
       const container = document.getElementById("menu");
       container.innerHTML = "";
 
-      // Group items by category
       const categories = {};
       rows.forEach(row => {
-        const [category, item, price, soldOut, sellAtEvent] = row;
+        const [category, item, price1, price2, soldOut, sellAtEvent, notes] = row;
 
-        if (!sellAtEvent || sellAtEvent.toLowerCase() !== "yes") return; // Skip if not for this event
+        if (!sellAtEvent || sellAtEvent.toLowerCase() !== "yes") return;
         if (!categories[category]) categories[category] = [];
-        categories[category].push({ item, price, soldOut });
+        categories[category].push({ item, price1, price2, soldOut, notes });
       });
 
-      // Render each category
       Object.keys(categories).forEach(category => {
         const catHeader = document.createElement("div");
         catHeader.className = "category";
@@ -94,17 +118,49 @@
           if (entry.soldOut && entry.soldOut.toLowerCase() === "yes") {
             tr.classList.add("soldout");
           }
-          tr.innerHTML = `
-            <td class="item">${entry.item}</td>
-            <td class="price">$${entry.price}</td>
-          `;
+
+          let priceHTML = "";
+          if (entry.price1 && entry.price2) {
+            priceHTML = `$${entry.price1} / $${entry.price2}`;
+          } else if (entry.price1) {
+            priceHTML = `$${entry.price1}`;
+          }
+
+          const tdItem = document.createElement("td");
+          tdItem.className = "item";
+
+          const itemDiv = document.createElement("div");
+          itemDiv.className = "item-name";
+          itemDiv.innerHTML = `<span>${entry.item}</span><span class="toggle-icon">+</span>`;
+          tdItem.appendChild(itemDiv);
+
+          if (entry.notes) {
+            const notesDiv = document.createElement("div");
+            notesDiv.className = "notes";
+            notesDiv.textContent = entry.notes;
+            tdItem.appendChild(notesDiv);
+
+            itemDiv.addEventListener("click", () => {
+              const isVisible = notesDiv.style.display === "block";
+              notesDiv.style.display = isVisible ? "none" : "block";
+              itemDiv.querySelector(".toggle-icon").textContent = isVisible ? "+" : "–";
+            });
+          } else {
+            itemDiv.querySelector(".toggle-icon").style.display = "none";
+          }
+
+          const tdPrice = document.createElement("td");
+          tdPrice.className = "price";
+          tdPrice.textContent = priceHTML;
+
+          tr.appendChild(tdItem);
+          tr.appendChild(tdPrice);
           table.appendChild(tr);
         });
         container.appendChild(table);
       });
     }
 
-    // Load data initially and refresh every 30 seconds
     fetchData();
     setInterval(fetchData, 30000);
   </script>
