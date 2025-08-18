@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Concessions Menu</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    }
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      color: #ffcc00;
+    }
+    table {
+      width: 80%;
+      margin: 0 auto;
+      border-collapse: collapse;
+      font-size: 1.5em;
+    }
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #444;
+    }
+    tr.soldout {
+      color: #888;
+      text-decoration: line-through;
+    }
+    .price {
+      text-align: right;
+      width: 120px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Concessions Menu</h1>
+  <table id="menu"></table>
+
+  <script>
+    // Replace with your Google Sheet ID
+    const sheetID = "1SCplGSlgFs4jHvPhj2mVwToWkQknWmeevnxE1wss970";
+    const sheetRange = "A2:D"; // Item | Price | Sold Out | Sell at This Event
+    const apiKey = "YOUR_GOOGLE_API_KEY";
+
+    async function fetchData() {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheetRange}?key=${apiKey}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      renderTable(data.values || []);
+    }
+
+    function renderTable(rows) {
+      const table = document.getElementById("menu");
+      table.innerHTML = "<tr><th>Item</th><th class='price'>Price</th></tr>";
+
+      rows.forEach(row => {
+        const [item, price, soldOut, sellAtEvent] = row;
+
+        // Skip if not marked for this event
+        if (!sellAtEvent || sellAtEvent.toLowerCase() !== "yes") return;
+
+        const tr = document.createElement("tr");
+
+        // Mark as sold out if needed
+        if (soldOut && soldOut.toLowerCase() === "yes") {
+          tr.classList.add("soldout");
+        }
+
+        tr.innerHTML = `<td>${item}</td><td class="price">$${price}</td>`;
+        table.appendChild(tr);
+      });
+    }
+
+    // Fetch every 30 seconds
+    fetchData();
+    setInterval(fetchData, 30000);
+  </script>
+</body>
+</html>
