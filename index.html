@@ -41,16 +41,18 @@
   <table id="menu"></table>
 
   <script>
-    // Replace with your Google Sheet ID
-    const sheetID = "1SCplGSlgFs4jHvPhj2mVwToWkQknWmeevnxE1wss970";
-    const sheetRange = "A2:D"; // Item | Price | Sold Out | Sell at This Event
-    const apiKey = "YOUR_GOOGLE_API_KEY";
+    const SHEET_ID = "1SCplGSlgFs4jHvPhj2mVwToWkQknWmeevnxE1wss970"; // <-- Replace with your actual Sheet ID
+    const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 
     async function fetchData() {
-      const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetID}/values/${sheetRange}?key=${apiKey}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      renderTable(data.values || []);
+      const res = await fetch(SHEET_URL);
+      const text = await res.text();
+
+      // Strip out Google’s weird prefix/suffix
+      const json = JSON.parse(text.substr(47).slice(0, -2));
+
+      const rows = json.table.rows.map(r => r.c.map(c => (c ? c.v : "")));
+      renderTable(rows);
     }
 
     function renderTable(rows) {
@@ -60,13 +62,13 @@
       rows.forEach(row => {
         const [item, price, soldOut, sellAtEvent] = row;
 
-        // Skip if not marked for this event
-        if (!sellAtEvent || sellAtEvent.toLowerCase() !== "yes") return;
+        // Skip if "Sell at This Event" is not "Yes"
+        if (!sellAtEvent || sellAtEvent.toString().toLowerCase() !== "yes") return;
 
         const tr = document.createElement("tr");
 
         // Mark as sold out if needed
-        if (soldOut && soldOut.toLowerCase() === "yes") {
+        if (soldOut && soldOut.toString().toLowerCase() === "yes") {
           tr.classList.add("soldout");
         }
 
@@ -75,7 +77,7 @@
       });
     }
 
-    // Fetch every 30 seconds
+    // Fetch on load and refresh every 30 seconds
     fetchData();
     setInterval(fetchData, 30000);
   </script>
