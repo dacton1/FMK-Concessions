@@ -6,80 +6,107 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #111;
+      background: #222;
       color: #fff;
-      text-align: center;
       padding: 20px;
+      max-width: 1000px;
+      margin: auto;
     }
     h1 {
-      font-size: 2.5em;
-      margin-bottom: 20px;
+      font-size: 3em;
+      text-align: center;
+      margin-bottom: 30px;
       color: #ffcc00;
     }
-    table {
-      width: 80%;
-      margin: 0 auto;
-      border-collapse: collapse;
-      font-size: 1.5em;
+    .category {
+      font-size: 2em;
+      font-weight: bold;
+      margin-top: 30px;
+      padding: 10px;
+      background: #444;
+      color: #ffcc00;
+      border-radius: 5px;
     }
-    th, td {
-      padding: 12px;
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 1.6em;
+    }
+    td {
+      padding: 10px 5px;
       border-bottom: 1px solid #444;
     }
-    tr.soldout {
+    td.price {
+      text-align: right;
+      width: 150px;
+    }
+    tr.soldout td.item {
       color: #888;
       text-decoration: line-through;
     }
-    .price {
-      text-align: right;
-      width: 120px;
+    tr.soldout td.price {
+      color: #888;
     }
   </style>
 </head>
 <body>
   <h1>Concessions Menu</h1>
-  <table id="menu"></table>
+  <div id="menu"></div>
 
   <script>
-    const SHEET_ID = "1SCplGSlgFs4jHvPhj2mVwToWkQknWmeevnxE1wss970"; // <-- Replace with your actual Sheet ID
+    const SHEET_ID = "1SCplGSlgFs4jHvPhj2mVwToWkQknWmeevnxE1wss970"; // Replace with your Sheet ID
     const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 
     async function fetchData() {
       const res = await fetch(SHEET_URL);
       const text = await res.text();
-
-      // Strip out Google’s weird prefix/suffix
       const json = JSON.parse(text.substr(47).slice(0, -2));
 
       const rows = json.table.rows.map(r => r.c.map(c => (c ? c.v : "")));
-      renderTable(rows);
+      renderMenu(rows);
     }
 
-    function renderTable(rows) {
-      const table = document.getElementById("menu");
-      table.innerHTML = "<tr><th>Item</th><th class='price'>Price</th></tr>";
+    function renderMenu(rows) {
+      const container = document.getElementById("menu");
+      container.innerHTML = "";
 
+      // Group items by category
+      const categories = {};
       rows.forEach(row => {
-        const [item, price, soldOut, sellAtEvent] = row;
+        const [category, item, price, soldOut, sellAtEvent] = row;
 
-        // Skip if "Sell at This Event" is not "Yes"
-        if (!sellAtEvent || sellAtEvent.toString().toLowerCase() !== "yes") return;
+        if (!sellAtEvent || sellAtEvent.toLowerCase() !== "yes") return; // Skip if not for this event
+        if (!categories[category]) categories[category] = [];
+        categories[category].push({ item, price, soldOut });
+      });
 
-        const tr = document.createElement("tr");
+      // Render each category
+      Object.keys(categories).forEach(category => {
+        const catHeader = document.createElement("div");
+        catHeader.className = "category";
+        catHeader.textContent = category;
+        container.appendChild(catHeader);
 
-        // Mark as sold out if needed
-        if (soldOut && soldOut.toString().toLowerCase() === "yes") {
-          tr.classList.add("soldout");
-        }
-
-        tr.innerHTML = `<td>${item}</td><td class="price">$${price}</td>`;
-        table.appendChild(tr);
+        const table = document.createElement("table");
+        categories[category].forEach(entry => {
+          const tr = document.createElement("tr");
+          if (entry.soldOut && entry.soldOut.toLowerCase() === "yes") {
+            tr.classList.add("soldout");
+          }
+          tr.innerHTML = `
+            <td class="item">${entry.item}</td>
+            <td class="price">$${entry.price}</td>
+          `;
+          table.appendChild(tr);
+        });
+        container.appendChild(table);
       });
     }
 
-    // Fetch on load and refresh every 30 seconds
+    // Load data initially and refresh every 30 seconds
     fetchData();
-    setInterval(fetchData, 10000);
+    setInterval(fetchData, 30000);
   </script>
 </body>
 </html>
