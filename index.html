@@ -104,99 +104,104 @@
   <div class="price-labels">One / Two</div>
   <div id="menu"></div>
 
-  <script>
-    const SHEET_ID = "1SCplGSlgFs4jHvPhj2mVwToWkQknWmeevnxE1wss970";
-    const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+<script>
+  const SHEET_ID = "1SCplGSlgFs4jHvPhj2mVwToWkQknWmeevnxE1wss970";
+  const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 
-    let previousStatus = {};
+  let previousStatus = {};
+  let lastRenderedHTML = "";
 
-    async function fetchData() {
-      const res = await fetch(SHEET_URL);
-      const text = await res.text();
-      const json = JSON.parse(text.substr(47).slice(0, -2));
-      const rows = json.table.rows.map(r => r.c.map(c => (c ? c.v : "")));
-      renderMenu(rows);
-    }
+  async function fetchData() {
+    const res = await fetch(SHEET_URL);
+    const text = await res.text();
+    const json = JSON.parse(text.substr(47).slice(0, -2));
+    const rows = json.table.rows.map(r => r.c.map(c => (c ? c.v : "")));
+    renderMenu(rows);
+  }
 
-    function renderMenu(rows) {
+  function formatPrice(price) {
+    if (!price) return "";
+    return `$${parseFloat(price).toFixed(2)}`;
+  }
+
+  function renderMenu(rows) {
+    // Build HTML string instead of DOM directly
+    const categories = {};
+    rows.forEach(row => {
+      const [category, item, price1, price2, soldOut, sellAtEvent, notes] = row;
+      if (!sellAtEvent || sellAtEvent.toLowerCase() !== "yes") return;
+      if (!categories[category]) categories[category] = [];
+      categories[category].push({ item, price1, price2, soldOut, notes });
+    });
+
+    let html = "";
+    Object.keys(categories).forEach(category => {
+      html += `<div class="category">${category}</div>`;
+      html += `<table>`;
+      categories[category].forEach(entry => {
+        let soldOutClass = "";
+        const statusChanged =
+          previousStatus[entry.item] !== undefined &&
+          previousStatus[entry.item] !== entry.soldOut;
+
+        if (entry.soldOut && entry.soldOut.toLowerCase() === "yes") {
+          soldOutClass = "soldout";
+          if (statusChanged) soldOutClass += " flash-soldout";
+        }
+
+        let priceHTML = "";
+        if (entry.price1 && entry.price2) {
+          priceHTML = `${formatPrice(entry.price1)} / ${formatPrice(entry.price2)}`;
+        } else if (entry.price1) {
+          priceHTML = formatPrice(entry.price1);
+        }
+
+        html += `
+          <tr class="${soldOutClass}">
+            <td class="item">
+              <div class="item-name">
+                <span>${entry.item}</span>
+                ${entry.notes ? `<span class="toggle-icon">+</span>` : ""}
+              </div>
+              ${entry.notes ? `<div class="notes">${entry.notes}</div>` : ""}
+            </td>
+            <td class="price">${priceHTML}</td>
+          </tr>
+        `;
+
+        previousStatus[entry.item] = entry.soldOut;
+      });
+      html += `</table>`;
+    });
+
+    // Only update DOM if content changed
+    if (html !== lastRenderedHTML) {
       const container = document.getElementById("menu");
-      container.innerHTML = "";
+      container.innerHTML = html;
+      container.style.opacity = 0;
+      container.offsetHeight; // force reflow
+      container.style.transition = "opacity 0.8s";
+      container.style.opacity = 1;
 
-      const categories = {};
-      rows.forEach(row => {
-        const [category, item, price1, price2, soldOut, sellAtEvent, notes] = row;
-        if (!sellAtEvent || sellAtEvent.toLowerCase() !== "yes") return;
-        if (!categories[category]) categories[category] = [];
-        categories[category].push({ item, price1, price2, soldOut, notes });
+      // re-attach toggle behavior for notes
+      container.querySelectorAll(".item-name").forEach(itemDiv => {
+        const toggleIcon = itemDiv.querySelector(".toggle-icon");
+        const notesDiv = itemDiv.parentElement.querySelector(".notes");
+        if (notesDiv) {
+          itemDiv.addEventListener("click", () => {
+            const isVisible = notesDiv.style.display === "block";
+            notesDiv.style.display = isVisible ? "none" : "block";
+            toggleIcon.textContent = isVisible ? "+" : "–";
+          });
+        }
       });
 
-      Object.keys(categories).forEach(category => {
-        const catHeader = document.createElement("div");
-        catHeader.className = "category";
-        catHeader.textContent = category;
-        container.appendChild(catHeader);
-
-        const table = document.createElement("table");
-        categories[category].forEach(entry => {
-          const tr = document.createElement("tr");
-
-          const statusChanged =
-            previousStatus[entry.item] !== undefined &&
-            previousStatus[entry.item] !== entry.soldOut;
-
-          if (entry.soldOut && entry.soldOut.toLowerCase() === "yes") {
-            tr.classList.add("soldout");
-            if (statusChanged) tr.classList.add("flash-soldout");
-          }
-
-          let priceHTML = "";
-          if (entry.price1 && entry.price2) {
-            priceHTML = `$${entry.price1} / $${entry.price2}`;
-          } else if (entry.price1) {
-            priceHTML = `$${entry.price1}`;
-          }
-
-          const tdItem = document.createElement("td");
-          tdItem.className = "item";
-
-          const itemDiv = document.createElement("div");
-          itemDiv.className = "item-name";
-          itemDiv.innerHTML = `<span>${entry.item}</span><span class="toggle-icon">+</span>`;
-          tdItem.appendChild(itemDiv);
-
-          if (entry.notes) {
-            const notesDiv = document.createElement("div");
-            notesDiv.className = "notes";
-            notesDiv.textContent = entry.notes;
-            tdItem.appendChild(notesDiv);
-
-            itemDiv.addEventListener("click", () => {
-              const isVisible = notesDiv.style.display === "block";
-              notesDiv.style.display = isVisible ? "none" : "block";
-              itemDiv.querySelector(".toggle-icon").textContent = isVisible ? "+" : "–";
-            });
-          } else {
-            itemDiv.querySelector(".toggle-icon").style.display = "none";
-          }
-
-          const tdPrice = document.createElement("td");
-          tdPrice.className = "price";
-          tdPrice.textContent = priceHTML;
-
-          tr.appendChild(tdItem);
-          tr.appendChild(tdPrice);
-          table.appendChild(tr);
-
-          // save status for comparison next refresh
-          previousStatus[entry.item] = entry.soldOut;
-        });
-
-        container.appendChild(table);
-      });
+      lastRenderedHTML = html;
     }
+  }
 
-    fetchData();
-    setInterval(fetchData, 30000);
-  </script>
+  fetchData();
+  setInterval(fetchData, 10000); // every 10s
+</script>
 </body>
 </html>
