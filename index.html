@@ -2,234 +2,241 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Concessions Menu</title>
   <style>
     body {
       font-family: "Arial Narrow", Arial, sans-serif;
-      background: rgb(64,64,64);
-      color: rgb(255,255,255);
+      background-color: rgb(64, 64, 64);
+      color: rgb(255, 255, 255);
       margin: 0;
       padding: 0;
       text-align: center;
-      text-transform: uppercase;
-      overflow: hidden; /* no scrolling */
     }
+
     header {
       display: flex;
-      flex-direction: column;
-      justify-content: center;
       align-items: center;
-      padding: 20px;
+      justify-content: center;
+      position: relative;
+      padding: 10px 20px;
     }
+
     header img {
-      height: 90px;
-      margin-bottom: 10px;
+      position: absolute;
+      right: 20px;
+      top: 10px;
+      height: 60px;
     }
-    h1 {
-      font-size: 3.5em;
+
+    header h1 {
+      flex: 1;
       margin: 0;
+      font-size: 2rem;
     }
-    h2.subtitle {
-      font-size: 1.5em;
-      margin: 10px 0 0 0;
+
+    .subtitle {
+      font-size: 1rem;
+      margin: 5px 0 15px 0;
       font-weight: normal;
     }
+
     .category {
-      margin: 20px auto;
-      padding: 5px 20px;
-      max-width: 95%;
-    }
-    .category h2 {
-      background: rgb(255,230,153);
-      color: rgb(0,0,0);
-      padding: 10px;
-      margin: 0 0 10px;
-      font-size: 2.5em;
-      border-radius: 8px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 2.2em;
-    }
-    td {
-      padding: 8px;
-    }
-    td.item {
-      text-align: left;
-      white-space: nowrap;
-      width: 60%;
-    }
-    td.price {
-      text-align: right;
+      background-color: rgb(255, 230, 153);
+      color: rgb(0, 0, 0);
       font-weight: bold;
-      white-space: nowrap;
-      width: 40%;
-    }
-    .notes {
-      font-size: 0.5em;
-      color: #ccc;
-      margin-top: 3px;
-    }
-    .soldout {
-      font-weight: bold;
-      color: white;
-      background: red;
-      padding: 3px 8px;
-      border-radius: 5px;
-      margin-left: 10px;
-    }
-    .grayed {
-      color: #aaa !important;
-    }
-    /* Leader lines */
-    td.item::after {
-      content: "";
-      display: inline-block;
-      border-bottom: 2px dotted #aaa;
-      width: 100%;
-      margin: 0 5px;
-      transform: translateY(-0.3em);
-    }
-    footer {
-      margin-top: 20px;
-      padding: 10px;
-    }
-    .bottom-logos {
+      font-size: 1.3rem;
+      padding: 6px;
       margin-top: 15px;
+    }
+
+    .menu {
+      width: 95%;
+      margin: 0 auto;
+      border-collapse: collapse;
+      font-size: 1rem;
+    }
+
+    .menu td {
+      padding: 6px 4px;
+      border-bottom: 1px dotted rgb(200, 200, 200, 0.4);
+    }
+
+    .item-row {
       display: flex;
-      justify-content: center;
-      gap: 20px;
+      justify-content: space-between;
       align-items: center;
     }
-    .bottom-logos img {
-      height: 50px;
+
+    .item-name {
+      flex: 1;
+      text-align: left;
+      text-transform: uppercase;
     }
-    .qrcode {
-      margin: 20px auto;
+
+    .leader-line {
+      flex-grow: 1;
+      border-bottom: 1px dotted rgb(200, 200, 200);
+      margin: 0 5px;
     }
-    .maincourse-header {
-      font-size: 1em;
+
+    .item-price {
       text-align: right;
       font-weight: bold;
-      padding-bottom: 5px;
-      color: rgb(200,200,200);
+    }
+
+    .sold-out .item-price {
+      color: gray;
+    }
+
+    .sold-out .item-name::after {
+      content: " SOLD OUT";
+      color: red;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+
+    .notes {
+      font-size: 0.8rem;
+      color: rgb(220, 220, 220);
+      margin-top: 3px;
+      text-align: left;
+    }
+
+    .price-header {
+      display: flex;
+      justify-content: flex-end;
+      font-size: 0.9rem;
+      margin-right: 10px;
+      gap: 30px;
+    }
+
+    footer {
+      margin-top: 25px;
+      font-size: 0.9rem;
+    }
+
+    .logos {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 25px;
+      margin-top: 10px;
+    }
+
+    .logos img {
+      height: 40px;
+    }
+
+    #qrcode {
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
   <header>
-    <img src="Knights logo 1.png" alt="Knights Logo"/>
     <h1>Concessions Menu</h1>
-    <h2 class="subtitle">All proceeds go to the Fairview High School Marching Band</h2>
+    <img src="Knights logo 1.png" alt="School Logo" />
   </header>
+  <div class="subtitle">All proceeds go to the Fairview High School Marching Band</div>
 
-  <div id="menu"></div>
+  <div id="menu-container"></div>
 
   <footer>
-    <div class="qrcode">
-      <p>Scan to view this menu on your phone:</p>
-      <canvas id="qr"></canvas>
-    </div>
-    <div class="bottom-logos">
-      <img src="creditcards.png" alt="Credit Cards Accepted"/>
-      <img src="venmo.png" alt="Venmo Accepted"/>
+    <div>Scan to view on your phone:</div>
+    <div id="qrcode"></div>
+    <div class="logos">
+      <img src="creditcard.png" alt="Credit Cards Accepted" />
+      <img src="venmo.png" alt="Venmo Accepted" />
+      <img src="applepay.png" alt="Apple Pay Accepted" />
     </div>
   </footer>
 
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
     const SHEET_ID = "1SCplGSlgFs4jHvPhj2mVwToWkQknWmeevnxE1wss970";
-    const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+    const SHEET_URL =
+      `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+    let lastData = "";
 
-    let previousData = null;
-
-    async function fetchData() {
+    async function fetchSheet() {
       try {
-        const response = await fetch(SHEET_URL);
-        const text = await response.text();
+        const res = await fetch(SHEET_URL);
+        const text = await res.text();
         const json = JSON.parse(text.substr(47).slice(0, -2));
-
-        const rows = json.table.rows.map(r =>
-          r.c.map(c => (c ? c.v : ""))
-        );
-
+        const rows = json.table.rows.map(r => r.c.map(c => (c ? c.v : "")));
         const headers = json.table.cols.map(c => c.label);
-        const items = rows.map(row => {
+
+        const items = rows.map(r => {
           let obj = {};
-          headers.forEach((h, i) => {
-            obj[h] = row[i];
-          });
+          headers.forEach((h, i) => (obj[h] = r[i]));
           return obj;
         });
 
-        localStorage.setItem("cachedMenu", JSON.stringify(items));
         renderMenu(items);
-
-      } catch (e) {
-        console.warn("Fetch failed, using cached menu", e);
-        const cached = localStorage.getItem("cachedMenu");
-        if (cached) {
-          renderMenu(JSON.parse(cached));
-        } else {
-          document.getElementById("menu").innerHTML = "<p>Menu unavailable</p>";
-        }
+      } catch (err) {
+        console.error("Error fetching sheet:", err);
       }
     }
 
     function renderMenu(items) {
-      items = items.filter(i => i["Sell at This Event"] === "Yes");
-
-      let categories = {};
-      items.forEach(item => {
-        const category = item.Category || "Other";
-        if (!categories[category]) categories[category] = [];
-        categories[category].push(item);
-      });
-
-      for (let cat in categories) {
-        categories[cat].sort((a, b) =>
-          (a["Priority in Category"] || 999) - (b["Priority in Category"] || 999)
-        );
-      }
-
-      let newData = JSON.stringify(items);
-      if (newData === previousData) return;
-      previousData = newData;
+      const container = document.getElementById("menu-container");
 
       let html = "";
-      for (let cat in categories) {
-        html += `<div class="category"><h2>${cat}</h2><table>`;
-        if (cat.toLowerCase() === "main course") {
-          html += `<tr><td></td><td class="maincourse-header">One / Two</td></tr>`;
+      const categories = [...new Set(items.map(i => i.Category))];
+
+      categories.forEach(cat => {
+        html += `<div class="category">${cat}</div>`;
+
+        // Add One/Two labels if category is Main Course
+        if (cat.toUpperCase().includes("MAIN")) {
+          html += `<div class="price-header"><span>One</span><span>Two</span></div>`;
         }
-        categories[cat].forEach(item => {
-          let price1 = item["Price for 1"] ? parseFloat(item["Price for 1"]).toFixed(2) : "";
-          let price2 = item["Price for 2"] ? parseFloat(item["Price for 2"]).toFixed(2) : "";
+
+        // Sort by priority in category
+        const catItems = items
+          .filter(i => i.Category === cat && i["Sell at This Event"] === "Yes")
+          .sort((a, b) =>
+            (parseInt(a["Priority in Category"]) || 999) -
+            (parseInt(b["Priority in Category"]) || 999)
+          );
+
+        catItems.forEach(i => {
+          let price1 = i["Price for 1"] ? parseFloat(i["Price for 1"]).toFixed(2) : "";
+          let price2 = i["Price for 2"] ? parseFloat(i["Price for 2"]).toFixed(2) : "";
           let priceDisplay = price1 && price2 ? `$${price1} / $${price2}` : (price1 ? `$${price1}` : "");
 
-          let soldOut = item["Sold Out"] === "Yes";
-          let notes = item["Notes"] || "";
+          let soldOut = i["Sold Out"] === "Yes" ? "sold-out" : "";
+          let notes = i["Notes"] ? `<div class="notes">${i["Notes"]}</div>` : "";
 
-          html += `<tr>
-            <td class="item">
-              ${item.Item}
-              ${soldOut ? `<span class="soldout">SOLD OUT</span>` : ""}
-              ${notes ? `<div class="notes">${notes}</div>` : ""}
-            </td>
-            <td class="price ${soldOut ? 'grayed' : ''}">${priceDisplay}</td>
-          </tr>`;
+          html += `
+            <div class="item-row ${soldOut}">
+              <div class="item-name">${i.Item}</div>
+              <div class="leader-line"></div>
+              <div class="item-price">${priceDisplay}</div>
+            </div>
+            ${notes}
+          `;
         });
-        html += `</table></div>`;
+      });
+
+      const newData = html;
+      if (newData !== lastData) {
+        container.innerHTML = html;
+        lastData = newData;
       }
-      document.getElementById("menu").innerHTML = html;
     }
 
-    QRCode.toCanvas(document.getElementById("qr"), window.location.href, { width: 150 });
+    // Initial fetch & auto-refresh
+    fetchSheet();
+    setInterval(fetchSheet, 10000);
 
-    fetchData();
-    setInterval(fetchData, 10000);
+    // Generate QR code
+    new QRCode(document.getElementById("qrcode"), {
+      text: window.location.href,
+      width: 100,
+      height: 100,
+    });
   </script>
 </body>
 </html>
