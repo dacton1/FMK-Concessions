@@ -2,42 +2,50 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Concessions Menu</title>
+  <title>Fairview Concessions Menu</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #222;
+      background: #000;
       color: #fff;
       padding: 20px;
       max-width: 1000px;
       margin: auto;
     }
-    h1 {
-      font-size: 3em;
+    header {
       text-align: center;
-      margin-bottom: 10px;
-      color: #ffcc00;
+      margin-bottom: 20px;
+    }
+    header img {
+      max-height: 120px;
+    }
+    h1 {
+      font-size: clamp(2em, 5vw, 3.5em);
+      margin: 10px 0;
+      color: #ff0000;
     }
     .price-labels {
       text-align: right;
-      font-size: 1em;
+      font-size: clamp(0.8em, 2vw, 1.2em);
       color: #aaa;
       margin-bottom: 20px;
     }
     .category {
-      font-size: 2em;
+      font-size: clamp(1.5em, 3vw, 2.2em);
       font-weight: bold;
       margin-top: 30px;
       padding: 10px;
-      background: #444;
-      color: #ffcc00;
+      background: #ff0000;
+      color: #fff;
       border-radius: 5px;
     }
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
-      font-size: 1.6em;
+      font-size: clamp(1.2em, 2.5vw, 1.8em);
+      opacity: 0;
+      animation: fadeIn 0.8s forwards;
     }
     td {
       padding: 10px 5px;
@@ -47,6 +55,7 @@
     td.price {
       text-align: right;
       width: 200px;
+      font-weight: bold;
       white-space: nowrap;
     }
     .item-name {
@@ -69,14 +78,29 @@
     tr.soldout td.item {
       color: #888;
       text-decoration: line-through;
+      position: relative;
     }
     tr.soldout td.price {
       color: #888;
     }
+    .flash-soldout {
+      animation: flashSoldout 1s ease-in-out;
+    }
+    @keyframes flashSoldout {
+      0% { background-color: #ff0000; color: #fff; }
+      100% { background-color: transparent; color: inherit; }
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
   </style>
 </head>
 <body>
-  <h1>Concessions Menu</h1>
+  <header>
+    <img src="https://upload.wikimedia.org/wikipedia/en/6/64/Fairview_High_School_Boulder_CO_logo.png" alt="Fairview Knights Logo">
+    <h1>Fairview Concessions Menu</h1>
+  </header>
+
   <div class="price-labels">One / Two</div>
   <div id="menu"></div>
 
@@ -84,11 +108,12 @@
     const SHEET_ID = "1SCplGSlgFs4jHvPhj2mVwToWkQknWmeevnxE1wss970";
     const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 
+    let previousStatus = {};
+
     async function fetchData() {
       const res = await fetch(SHEET_URL);
       const text = await res.text();
       const json = JSON.parse(text.substr(47).slice(0, -2));
-
       const rows = json.table.rows.map(r => r.c.map(c => (c ? c.v : "")));
       renderMenu(rows);
     }
@@ -100,7 +125,6 @@
       const categories = {};
       rows.forEach(row => {
         const [category, item, price1, price2, soldOut, sellAtEvent, notes] = row;
-
         if (!sellAtEvent || sellAtEvent.toLowerCase() !== "yes") return;
         if (!categories[category]) categories[category] = [];
         categories[category].push({ item, price1, price2, soldOut, notes });
@@ -115,8 +139,14 @@
         const table = document.createElement("table");
         categories[category].forEach(entry => {
           const tr = document.createElement("tr");
+
+          const statusChanged =
+            previousStatus[entry.item] !== undefined &&
+            previousStatus[entry.item] !== entry.soldOut;
+
           if (entry.soldOut && entry.soldOut.toLowerCase() === "yes") {
             tr.classList.add("soldout");
+            if (statusChanged) tr.classList.add("flash-soldout");
           }
 
           let priceHTML = "";
@@ -156,7 +186,11 @@
           tr.appendChild(tdItem);
           tr.appendChild(tdPrice);
           table.appendChild(tr);
+
+          // save status for comparison next refresh
+          previousStatus[entry.item] = entry.soldOut;
         });
+
         container.appendChild(table);
       });
     }
