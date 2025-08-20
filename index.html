@@ -1,208 +1,212 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Concessions Menu</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #000;
-      color: #fff;
-      padding: 20px;
-      max-width: 1000px;
-      margin: auto;
+      background: white;
+      color: black;
+      margin: 0;
+      padding: 0;
+      text-align: center;
     }
     header {
-      text-align: center;
-      margin-bottom: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: red;
+      color: white;
+      padding: 10px;
     }
     header img {
-      max-height: 120px;
+      height: 80px;
+      margin-right: 15px;
     }
     h1 {
-      font-size: clamp(2em, 5vw, 3.5em);
-      margin: 10px 0;
-      color: #ff0000;
-    }
-    .price-labels {
-      text-align: right;
-      font-size: clamp(0.8em, 2vw, 1.2em);
-      color: #aaa;
-      margin-bottom: 20px;
+      font-size: 3em;
+      margin: 0;
     }
     .category {
-      font-size: clamp(1.5em, 3vw, 2.2em);
-      font-weight: bold;
-      margin-top: 30px;
+      margin: 30px auto;
+      padding: 10px 20px;
+      max-width: 1000px;
+      border-top: 4px solid black;
+    }
+    .category h2 {
+      background: black;
+      color: white;
       padding: 10px;
-      background: #ff0000;
-      color: #fff;
-      border-radius: 5px;
+      margin: 0 0 20px;
+      font-size: 2em;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
-      font-size: clamp(1.2em, 2.5vw, 1.8em);
-      opacity: 0;
-      animation: fadeIn 0.8s forwards;
+      font-size: 1.8em;
     }
     td {
-      padding: 10px 5px;
-      border-bottom: 1px solid #444;
-      vertical-align: top;
+      padding: 12px;
+      text-align: left;
     }
     td.price {
       text-align: right;
-      width: 200px;
       font-weight: bold;
-      white-space: nowrap;
-    }
-    .item-name {
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .toggle-icon {
-      font-size: 0.7em;
-      color: #ffcc00;
-      margin-left: 10px;
     }
     .notes {
       font-size: 0.6em;
-      color: #bbb;
+      color: #333;
       margin-top: 5px;
-      display: none;
     }
-    tr.soldout td.item {
-      color: #888;
-      text-decoration: line-through;
-      position: relative;
+    .soldout {
+      font-weight: bold;
+      color: white;
+      background: red;
+      padding: 3px 8px;
+      border-radius: 5px;
+      margin-left: 10px;
+      animation: flash 0.8s ease-in-out;
     }
-    tr.soldout td.price {
-      color: #888;
+    @keyframes flash {
+      0% { opacity: 0; }
+      25% { opacity: 1; }
+      50% { opacity: 0; }
+      100% { opacity: 1; }
     }
-    .flash-soldout {
-      animation: flashSoldout 1s ease-in-out;
+    footer {
+      margin-top: 40px;
+      padding: 20px;
+      border-top: 4px solid black;
     }
-    @keyframes flashSoldout {
-      0% { background-color: #ff0000; color: #fff; }
-      100% { background-color: transparent; color: inherit; }
+    .bottom-logos {
+      margin-top: 15px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      align-items: center;
     }
-    @keyframes fadeIn {
-      to { opacity: 1; }
+    .bottom-logos img {
+      height: 50px;
+    }
+    .qrcode {
+      margin: 20px auto;
     }
   </style>
 </head>
 <body>
   <header>
-    <img src="Knights logo 1.png" alt="Knights Logo">
+    <img src="Knights logo 1.png" alt="Knights Logo"/>
     <h1>Concessions Menu</h1>
   </header>
 
-  <div class="price-labels">One / Two</div>
   <div id="menu"></div>
 
-<script>
-  const SHEET_ID = "1SCplGSlgFs4jHvPhj2mVwToWkQknWmeevnxE1wss970";
-  const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+  <footer>
+    <div class="qrcode">
+      <p>Scan to view this menu on your phone:</p>
+      <canvas id="qr"></canvas>
+    </div>
+    <div class="bottom-logos">
+      <img src="creditcards.png" alt="Credit Cards Accepted"/>
+      <img src="venmo.png" alt="Venmo Accepted"/>
+    </div>
+  </footer>
 
-  let previousStatus = {};
-  let lastRenderedHTML = "";
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script>
+    const SHEET_ID = "1SCplGSlgFs4jHvPhj2mVwToWkQknWmeevnxE1wss970";
+    const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 
-  async function fetchData() {
-    const res = await fetch(SHEET_URL);
-    const text = await res.text();
-    const json = JSON.parse(text.substr(47).slice(0, -2));
-    const rows = json.table.rows.map(r => r.c.map(c => (c ? c.v : "")));
-    renderMenu(rows);
-  }
+    let previousData = null;
 
-  function formatPrice(price) {
-    if (!price) return "";
-    return `$${parseFloat(price).toFixed(2)}`;
-  }
+    async function fetchData() {
+      try {
+        const response = await fetch(SHEET_URL);
+        const text = await response.text();
+        const json = JSON.parse(text.substr(47).slice(0, -2));
 
-  function renderMenu(rows) {
-    // Build HTML string instead of DOM directly
-    const categories = {};
-    rows.forEach(row => {
-      const [category, item, price1, price2, soldOut, sellAtEvent, notes] = row;
-      if (!sellAtEvent || sellAtEvent.toLowerCase() !== "yes") return;
-      if (!categories[category]) categories[category] = [];
-      categories[category].push({ item, price1, price2, soldOut, notes });
-    });
+        const rows = json.table.rows.map(r =>
+          r.c.map(c => (c ? c.v : ""))
+        );
 
-    let html = "";
-    Object.keys(categories).forEach(category => {
-      html += `<div class="category">${category}</div>`;
-      html += `<table>`;
-      categories[category].forEach(entry => {
-        let soldOutClass = "";
-        const statusChanged =
-          previousStatus[entry.item] !== undefined &&
-          previousStatus[entry.item] !== entry.soldOut;
-
-        if (entry.soldOut && entry.soldOut.toLowerCase() === "yes") {
-          soldOutClass = "soldout";
-          if (statusChanged) soldOutClass += " flash-soldout";
-        }
-
-        let priceHTML = "";
-        if (entry.price1 && entry.price2) {
-          priceHTML = `${formatPrice(entry.price1)} / ${formatPrice(entry.price2)}`;
-        } else if (entry.price1) {
-          priceHTML = formatPrice(entry.price1);
-        }
-
-        html += `
-          <tr class="${soldOutClass}">
-            <td class="item">
-              <div class="item-name">
-                <span>${entry.item}</span>
-                ${entry.notes ? `<span class="toggle-icon">+</span>` : ""}
-              </div>
-              ${entry.notes ? `<div class="notes">${entry.notes}</div>` : ""}
-            </td>
-            <td class="price">${priceHTML}</td>
-          </tr>
-        `;
-
-        previousStatus[entry.item] = entry.soldOut;
-      });
-      html += `</table>`;
-    });
-
-    // Only update DOM if content changed
-    if (html !== lastRenderedHTML) {
-      const container = document.getElementById("menu");
-      container.innerHTML = html;
-      container.style.opacity = 0;
-      container.offsetHeight; // force reflow
-      container.style.transition = "opacity 0.8s";
-      container.style.opacity = 1;
-
-      // re-attach toggle behavior for notes
-      container.querySelectorAll(".item-name").forEach(itemDiv => {
-        const toggleIcon = itemDiv.querySelector(".toggle-icon");
-        const notesDiv = itemDiv.parentElement.querySelector(".notes");
-        if (notesDiv) {
-          itemDiv.addEventListener("click", () => {
-            const isVisible = notesDiv.style.display === "block";
-            notesDiv.style.display = isVisible ? "none" : "block";
-            toggleIcon.textContent = isVisible ? "+" : "–";
+        const headers = json.table.cols.map(c => c.label);
+        const items = rows.map(row => {
+          let obj = {};
+          headers.forEach((h, i) => {
+            obj[h] = row[i];
           });
+          return obj;
+        });
+
+        localStorage.setItem("cachedMenu", JSON.stringify(items));
+        renderMenu(items);
+
+      } catch (e) {
+        console.warn("Fetch failed, using cached menu", e);
+        const cached = localStorage.getItem("cachedMenu");
+        if (cached) {
+          renderMenu(JSON.parse(cached));
+        } else {
+          document.getElementById("menu").innerHTML = "<p>Menu unavailable</p>";
         }
+      }
+    }
+
+    function renderMenu(items) {
+      // Filter out items not for this event
+      items = items.filter(i => i["Sell at This Event"] === "Yes");
+
+      // Group by category
+      let categories = {};
+      items.forEach(item => {
+        const category = item.Category || "Other";
+        if (!categories[category]) categories[category] = [];
+        categories[category].push(item);
       });
 
-      lastRenderedHTML = html;
+      // Sort within category by Priority in Category
+      for (let cat in categories) {
+        categories[cat].sort((a, b) =>
+          (a["Priority in Category"] || 999) - (b["Priority in Category"] || 999)
+        );
+      }
+
+      let newData = JSON.stringify(items);
+      if (newData === previousData) return; // no change → don’t redraw
+      previousData = newData;
+
+      let html = "";
+      for (let cat in categories) {
+        html += `<div class="category"><h2>${cat}</h2><table>`;
+        categories[cat].forEach(item => {
+          let price1 = item["Price for 1"] ? parseFloat(item["Price for 1"]).toFixed(2) : "";
+          let price2 = item["Price for 2"] ? parseFloat(item["Price for 2"]).toFixed(2) : "";
+          let priceDisplay = price1 && price2 ? `$${price1} / $${price2}` : (price1 ? `$${price1}` : "");
+
+          let soldOut = item["Sold Out"] === "Yes";
+          let notes = item["Notes"] || "";
+
+          html += `<tr>
+            <td>
+              ${item.Item}
+              ${soldOut ? `<span class="soldout">SOLD OUT</span>` : ""}
+              ${notes ? `<div class="notes">${notes}</div>` : ""}
+            </td>
+            <td class="price">${!soldOut ? priceDisplay : ""}</td>
+          </tr>`;
+        });
+        html += `</table></div>`;
+      }
+      document.getElementById("menu").innerHTML = html;
     }
-  }
 
-  fetchData();
-  setInterval(fetchData, 10000); // every 10s
-</script>
+    // Generate QR code linking to GitHub Pages menu
+    QRCode.toCanvas(document.getElementById("qr"), window.location.href, { width: 150 });
 
+    fetchData();
+    setInterval(fetchData, 10000); // refresh every 10s
+  </script>
 </body>
 </html>
