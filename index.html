@@ -11,43 +11,43 @@
       color: rgb(255, 255, 255);
       margin: 0;
       padding: 0;
-      text-align: center;
     }
 
     header {
       display: flex;
       align-items: center;
-      justify-content: center;
-      position: relative;
+      justify-content: space-between;
       padding: 10px 20px;
-    }
-
-    header img {
-      position: absolute;
-      right: 20px;
-      top: 10px;
-      height: 60px;
+      position: relative;
     }
 
     header h1 {
-      flex: 1;
       margin: 0;
       font-size: 2rem;
+      color: rgb(255,230,153);
+      text-align: left;
+    }
+
+    #qrcode {
+      width: 80px;
+      height: 80px;
     }
 
     .subtitle {
       font-size: 1rem;
-      margin: 5px 0 15px 0;
+      margin: 5px 20px 15px 20px;
       font-weight: normal;
+      text-align: left;
     }
 
     .category {
       background-color: rgb(255, 230, 153);
       color: rgb(0, 0, 0);
       font-weight: bold;
-      font-size: 1.3rem;
-      padding: 6px;
-      margin-top: 15px;
+      font-size: 1.1rem;
+      padding: 3px 0;
+      margin-top: 12px;
+      text-align: center;
     }
 
     .menu {
@@ -59,25 +59,20 @@
 
     .menu td {
       padding: 6px 4px;
-      border-bottom: 1px dotted rgb(200, 200, 200, 0.4);
+      border-bottom: 1px dotted rgba(200, 200, 200, 0.4);
     }
 
     .item-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin: 4px 0;
     }
 
     .item-name {
       flex: 1;
       text-align: left;
       text-transform: uppercase;
-    }
-
-    .leader-line {
-      flex-grow: 1;
-      border-bottom: 1px dotted rgb(200, 200, 200);
-      margin: 0 5px;
     }
 
     .item-price {
@@ -112,8 +107,9 @@
     }
 
     footer {
-      margin-top: 25px;
+      margin-top: 20px;
       font-size: 0.9rem;
+      text-align: center;
     }
 
     .logos {
@@ -121,35 +117,30 @@
       justify-content: center;
       align-items: center;
       gap: 25px;
-      margin-top: 10px;
+      margin-bottom: 8px;
     }
 
     .logos img {
-      height: 40px;
-    }
-
-    #qrcode {
-      margin-top: 10px;
+      height: 35px;
     }
   </style>
 </head>
 <body>
   <header>
     <h1>Concessions Menu</h1>
-    <img src="Knights logo 1.png" alt="School Logo" />
+    <div id="qrcode"></div>
   </header>
-  <div class="subtitle">All proceeds go to the Fairview High School Marching Band</div>
+  <div class="subtitle">All proceeds go to the Fairview Marching Band</div>
 
   <div id="menu-container"></div>
 
   <footer>
-    <div>Scan to view on your phone:</div>
-    <div id="qrcode"></div>
     <div class="logos">
       <img src="creditcard.png" alt="Credit Cards Accepted" />
       <img src="venmo.png" alt="Venmo Accepted" />
       <img src="applepay.png" alt="Apple Pay Accepted" />
     </div>
+    <div>Scan to view on your phone:</div>
   </footer>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -188,12 +179,10 @@
       categories.forEach(cat => {
         html += `<div class="category">${cat}</div>`;
 
-        // Add One/Two labels if category is Main Course
         if (cat.toUpperCase().includes("MAIN")) {
           html += `<div class="price-header"><span>One</span><span>Two</span></div>`;
         }
 
-        // Sort by priority in category
         const catItems = items
           .filter(i => i.Category === cat && i["Sell at This Event"] === "Yes")
           .sort((a, b) =>
@@ -212,7 +201,6 @@
           html += `
             <div class="item-row ${soldOut}">
               <div class="item-name">${i.Item}</div>
-              <div class="leader-line"></div>
               <div class="item-price">${priceDisplay}</div>
             </div>
             ${notes}
@@ -234,8 +222,8 @@
     // Generate QR code
     new QRCode(document.getElementById("qrcode"), {
       text: window.location.href,
-      width: 100,
-      height: 100,
+      width: 80,
+      height: 80,
     });
   </script>
 </body>
